@@ -3,8 +3,13 @@ package main
 import (
 	"os"
 	"log"
+	"fmt"
+	"time"
+	"net/http"
 	"io/ioutil"
 	"math/rand"
+	"path/filepath"
+	"encoding/json"
 	"gopkg.in/yaml.v2"
 )
 
@@ -18,11 +23,27 @@ type (
 		Debug bool `yaml:"debug"`
 		Timeout int `yaml:"timeout"`
 	}
+
+	JadwalSholat struct {
+		JadwalData `json:"data"`
+	}
+
+	JadwalData struct {
+		Subuh string `json:"Fajr"`
+		Dzuhur string `json:"Dhuhr"`
+		Ashar string `json:"Asr"`
+		Maghrib string `json:"Maghrib"`
+		Isha string `json:"Isha"`
+	}
 )
 
 func (c *botConfig) getConf() *botConfig {
+    dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+    if err != nil {
+            log.Fatal(err)
+    }
 
-    yamlFile, err := ioutil.ReadFile("config.yaml")
+    yamlFile, err := ioutil.ReadFile(dir + "/config.yml")
     if err != nil {
         log.Printf("yamlFile.Get err   #%v ", err)
         os.Exit(1)
@@ -34,6 +55,14 @@ func (c *botConfig) getConf() *botConfig {
     }
 
     return c
+}
+
+func InBetween(i, min, max int) bool {
+    if (i >= min) && (i <= max) {
+        return true
+    } else {
+        return false
+    }
 }
 
 func main() {
@@ -51,7 +80,7 @@ func main() {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	u.Timeout = c.Timeout
 
 	updates, err := bot.GetUpdatesChan(u)
 
@@ -83,5 +112,88 @@ func main() {
 			bot.Send(msg)
 
 		}
+
+		if Message == "/next-sholat" {
+			resp, err := http.Get("https://time.siswadi.com/pray/?address=Jakarta")
+			if err == nil {
+
+			    body, err := ioutil.ReadAll(resp.Body)
+			    if err != nil {
+			        panic(err)
+			    }
+
+				var j JadwalSholat
+				Err := json.Unmarshal(body, &j)
+
+				if Err == nil {
+
+					OniChannnn := "Jadwal Sholat tak Ditemukan :O"
+
+					Hour := time.Now().Hour()
+
+					if InBetween(Hour, 21, 6) {
+						OniChannnn = "Kurang Lebih Anda akan Sholat Subuh pada Jam : " + j.JadwalData.Subuh
+					}
+
+					if InBetween(Hour, 6, 13) {
+						OniChannnn = "Kurang Lebih Anda akan Sholat Dzuhur pada Jam : " + j.JadwalData.Dzuhur
+					}
+
+					if InBetween(Hour, 13, 16) {
+						OniChannnn = "Kurang Lebih Anda akan Sholat Ashar pada Jam : " + j.JadwalData.Ashar
+					}
+
+					if InBetween(Hour, 16, 18) {
+						OniChannnn = "Kurang Lebih Anda akan Sholat Maghrib pada Jam : " + j.JadwalData.Maghrib
+					}
+
+					if InBetween(Hour, 18, 21) {
+						OniChannnn = "Kurang Lebih Anda akan Sholat Isha pada Jam : " + j.JadwalData.Isha
+					}
+
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, OniChannnn)
+					msg.ReplyToMessageID = update.Message.MessageID
+
+					bot.Send(msg)
+				}
+
+			}
+		}
+
+		if Message == "/sholat" {
+			resp, err := http.Get("https://time.siswadi.com/pray/?address=Jakarta")
+			if err == nil {
+
+			    body, err := ioutil.ReadAll(resp.Body)
+			    if err != nil {
+			        panic(err)
+			    }
+
+				var j JadwalSholat
+				Err := json.Unmarshal(body, &j)
+
+				if Err == nil {
+
+					OniChannnn := fmt.Sprintf(`   Jadwal Sholat Untuk DKI Jakarta dan Sekitarnya
+					Subuh: %v,
+					Dzuhur: %v,
+					Ashar: %v,
+					Maghrib: %v,
+					Isha: %v
+					`, string(j.JadwalData.Subuh), j.JadwalData.Dzuhur, j.JadwalData.Ashar, j.JadwalData.Maghrib, j.JadwalData.Isha)
+
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, OniChannnn)
+					msg.ReplyToMessageID = update.Message.MessageID
+
+					bot.Send(msg)
+				}
+
+			}
+		}
+
+		// Jadwal Misa
+		// http://www.imankatolik.or.id/kaj.html
+		// API Nya belum di temukan
+
 	}
 }
