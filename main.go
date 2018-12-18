@@ -5,6 +5,7 @@ import (
 	"log"
 	"fmt"
 	"time"
+	"strings"
 	"net/http"
 	"io/ioutil"
 	"math/rand"
@@ -37,13 +38,19 @@ type (
 	}
 )
 
-func (c *botConfig) getConf() *botConfig {
+func currentDir() string {
     dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
     if err != nil {
-            log.Fatal(err)
+        log.Fatal(err)
+        os.Exit(1)
     }
+    return dir
+}
 
-    yamlFile, err := ioutil.ReadFile(dir + "/config.yml")
+func InBetween(i, min, max int) bool { return (i >= min) && (i <= max) }
+
+func (c *botConfig) getConf() *botConfig {
+    yamlFile, err := ioutil.ReadFile(currentDir() + "/config.yml") // bad
     if err != nil {
         log.Printf("yamlFile.Get err   #%v ", err)
         os.Exit(1)
@@ -55,14 +62,6 @@ func (c *botConfig) getConf() *botConfig {
     }
 
     return c
-}
-
-func InBetween(i, min, max int) bool {
-    if (i >= min) && (i <= max) {
-        return true
-    } else {
-        return false
-    }
 }
 
 func main() {
@@ -84,7 +83,11 @@ func main() {
 
 	updates, err := bot.GetUpdatesChan(u)
 
-	jokes := []string{"Assalamualaikum, \nyang nggak jawab PKI", "I don’t expect you to read this since comments are ignored by the compiler."}
+	content, err := ioutil.ReadFile(currentDir() + "/jokes.txt")
+	if err != nil {
+	    panic(err)
+	}
+	jokes := strings.Split(string(content), "\n")
 
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message Updates
