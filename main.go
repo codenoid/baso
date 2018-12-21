@@ -20,9 +20,9 @@ import (
 
 type (
 	botConfig struct {
-		Token string `yaml:"token"`
-		Debug bool `yaml:"debug"`
-		Timeout int `yaml:"timeout"`
+		Token 	string 	`yaml:"token"`
+		Debug 	bool 	`yaml:"debug"`
+		Timeout int 	`yaml:"timeout"`
 	}
 
 	JadwalSholat struct {
@@ -30,11 +30,11 @@ type (
 	}
 
 	JadwalData struct {
-		Subuh string `json:"Fajr"`
-		Dzuhur string `json:"Dhuhr"`
-		Ashar string `json:"Asr"`
+		Subuh 	string `json:"Fajr"`
+		Dzuhur 	string `json:"Dhuhr"`
+		Ashar 	string `json:"Asr"`
 		Maghrib string `json:"Maghrib"`
-		Isha string `json:"Isha"`
+		Isha 	string `json:"Isha"`
 	}
 )
 
@@ -94,9 +94,9 @@ func main() {
 			continue
 		}
 
-		Message := update.Message.Text
+		Message := strings.Split(update.Message.Text," ")
 
-		if Message == "/admin" {
+		if Message[0] == "/admin" {
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "@admin")
 			msg.ReplyToMessageID = update.Message.MessageID
@@ -105,7 +105,7 @@ func main() {
 
 		}
 
-		if Message == "/joke" {
+		if Message[0] == "/joke" {
 
 			n := rand.Int() % len(jokes)
 
@@ -116,8 +116,8 @@ func main() {
 
 		}
 
-		if Message == "/next-sholat" {
-			resp, err := http.Get("https://time.siswadi.com/pray/?address=Jakarta")
+		if Message[0] == "/next-sholat" {
+			resp, err := http.Get("https://time.siswadi.com/pray/?address="+Message[1])
 			if err == nil {
 
 			    body, err := ioutil.ReadAll(resp.Body)
@@ -163,8 +163,8 @@ func main() {
 			}
 		}
 
-		if Message == "/sholat" {
-			resp, err := http.Get("https://time.siswadi.com/pray/?address=Jakarta")
+		if Message[0] == "/sholat" {
+			resp, err := http.Get("https://time.siswadi.com/pray/?address="+Message[1])
 			if err == nil {
 
 			    body, err := ioutil.ReadAll(resp.Body)
@@ -177,13 +177,13 @@ func main() {
 
 				if Err == nil {
 
-					OniChannnn := fmt.Sprintf(`   Jadwal Sholat Untuk DKI Jakarta dan Sekitarnya
+					OniChannnn := fmt.Sprintf(`   Jadwal Sholat Untuk %v dan Sekitarnya
 					Subuh: %v,
 					Dzuhur: %v,
 					Ashar: %v,
 					Maghrib: %v,
 					Isha: %v
-					`, string(j.JadwalData.Subuh), j.JadwalData.Dzuhur, j.JadwalData.Ashar, j.JadwalData.Maghrib, j.JadwalData.Isha)
+					`, Message[1],j.JadwalData.Subuh, j.JadwalData.Dzuhur, j.JadwalData.Ashar, j.JadwalData.Maghrib, j.JadwalData.Isha)
 
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, OniChannnn)
 					msg.ReplyToMessageID = update.Message.MessageID
