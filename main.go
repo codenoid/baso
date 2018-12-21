@@ -67,6 +67,7 @@ func (c *botConfig) getConf() *botConfig {
 func main() {
 
 	var c botConfig
+	var kota string
     c.getConf()
 
 	bot, err := tgbotapi.NewBotAPI(c.Token)
@@ -95,6 +96,12 @@ func main() {
 		}
 
 		Message := strings.Split(update.Message.Text," ")
+		if len(Message)==1{
+			kota = "jakarta"
+		} else{
+			kota = Message[1]
+		
+		}
 
 		if Message[0] == "/admin" {
 
@@ -117,7 +124,7 @@ func main() {
 		}
 
 		if Message[0] == "/next-sholat" {
-			resp, err := http.Get("https://time.siswadi.com/pray/?address="+Message[1])
+			resp, err := http.Get("https://time.siswadi.com/pray/?address="+kota)
 			if err == nil {
 
 			    body, err := ioutil.ReadAll(resp.Body)
@@ -164,7 +171,7 @@ func main() {
 		}
 
 		if Message[0] == "/sholat" {
-			resp, err := http.Get("https://time.siswadi.com/pray/?address="+Message[1])
+			resp, err := http.Get("https://time.siswadi.com/pray/?address="+kota)
 			if err == nil {
 
 			    body, err := ioutil.ReadAll(resp.Body)
@@ -183,7 +190,7 @@ func main() {
 					Ashar: %v,
 					Maghrib: %v,
 					Isha: %v
-					`, Message[1],j.JadwalData.Subuh, j.JadwalData.Dzuhur, j.JadwalData.Ashar, j.JadwalData.Maghrib, j.JadwalData.Isha)
+					`, kota,j.JadwalData.Subuh, j.JadwalData.Dzuhur, j.JadwalData.Ashar, j.JadwalData.Maghrib, j.JadwalData.Isha)
 
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, OniChannnn)
 					msg.ReplyToMessageID = update.Message.MessageID
